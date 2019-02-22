@@ -14,6 +14,7 @@ set :markdown,
     no_intra_emphasis: true,
     renderer: UniqueHeadCounter
 
+
 # Assets
 set :css_dir, 'stylesheets'
 set :js_dir, 'javascripts'
@@ -53,6 +54,9 @@ end
 # If you want Middleman to listen on a different port, you can set that below
 set :port, 4567
 
+activate :livereload, host: '192.168.250.100'
+
 helpers do
   require './lib/toc_data.rb'
 end
+
