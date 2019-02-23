@@ -9,9 +9,6 @@ language_tabs: # must be one of https://git.io/vQNgJ
 toc_footers:
   - <a href='https://incontext.ai'>inContext.ai</a>
 
-includes:
-  - errors
-
 search: true
 ---
 # Introduction
@@ -89,7 +86,7 @@ ChatBot.connect((error, loginStatus) => {
 });
 ```
 
-Once initialized, establish a connection to inContext.  loginStatus will contain the result of the connection.
+Once initialized, establish a connection to inContext.  `loginStatus` will contain the result of the connection.
 
 # Listening
 
@@ -141,6 +138,8 @@ ChatBot.activate(
 );
 ```
 Once connected, enable the microphone and begin listening.  Results are emitted as speech is processed.
+
+<aside class="warning">Bots will automatically deactivate after 30 seconds of not hearing speech.  This will trigger an <code>onDisconnect</code> event.</aside>
 
 # Bots
 
@@ -227,7 +226,7 @@ export default class App extends Component<Props> {
     constructor() {
         super();
         this.state = {
-            log: ''
+            log: '\n'
         }
 
         ChatBot.initialize("username", "password");
@@ -266,7 +265,7 @@ export default class App extends Component<Props> {
 
     log(text) {
         this.setState({
-            log: this.state.log + '\n' + text
+            log: this.state.log + text + '\n'
         });
     }
 
@@ -312,7 +311,6 @@ Bot | Patient Smith's blood test results are consistent with a mild infection. W
 
 An instance of ChatBot enables the microphone and listens for questions and commands.  Partial speech recognition results are available using the `onPartialResult` event.  Once an utterance is heard, an `onResult` event fires with access to the result. Optionally, the response can be read out using device audio. 
 
-
 ### Constructor
 
 Instantiate a Bot object using a username and password
@@ -346,6 +344,8 @@ onDisconnect | Function | Execute on deactivation complete
 onError | Function | Execute on error
 onPartialResult | Function | Execute on partial speech recognized (`String in`)
 onResult | Function | Execute on final result and response is ready.  `Interaction` object will contain the result
+
+<aside class="warning">Bots will automatically deactivate after 30 seconds of not hearing speech.  This will trigger an <code>onDisconnect</code> event.</aside>
 
 ### deactivate()
 
@@ -429,7 +429,7 @@ class ViewController: UIViewController {
 Not Implemented
 ```
 
-ScribeBot is a transcription virtual assistant that listens for notes then aggregates and extracts notes from the notes for later retrieval
+ScribeBot is a transcription virtual assistant that listens for notes then aggregates and extracts data from the notes for later retrieval
 
 An example interaction might look like this:
 
@@ -476,6 +476,8 @@ onError | Function | Execute on error
 onPartialResult | Function | Execute on partial speech recognized (`String in`)
 onResult | Function | Execute on final result and response is ready.  `Interaction` object will contain the result
 
+<aside class="warning">Bots will automatically deactivate after 30 seconds of not hearing speech.  This will trigger an <code>onDisconnect</code> event.</aside>
+
 ### deactivate()
 
 Stop listening and disable microphone
@@ -491,6 +493,41 @@ Manually end current visit
 ## CodeBlueBot
 
 ```swift
+import UIKit
+import ChatbotSDK
+
+class ViewController: UIViewController {
+
+    @IBOutlet weak var textView: UITextView!
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+
+        let codebluebot = CodeBlueBot(username: "username", password: "password")
+        codebluebot.connect(onConnectSuccess: { (loginStatus) in
+            codebluebot.activate(onConnect: {
+                //connected and listening
+            }, onDisconnect: {
+                //disconnected
+            }, onError: {
+                //error
+            }, onResult: { (interaction) in
+                for action in interaction?.action ?? [] {
+                    self.textView.text.append("\(action.command ?? "Unknown")\n")
+                    for (k, v) in action.arguments_kv ?? [:] {
+                        self.textView.text.append("  \(k): \(v)\n")
+                    }
+                    self.textView.text.append("\n")
+                }
+            })
+        }, onConnectError: { (loginStatus) in
+            //connection error
+        })
+    }
+}
+```
+
+```objective_c
 #import "ViewController.h"
 #import <ChatbotSDK/ChatbotSDK.h>
 
@@ -531,19 +568,95 @@ Manually end current visit
 @end
 ```
 
-```objective_c
-
-```
-
 ```javascript
-Not Implemented
+import React, {Component} from 'react';
+import {StyleSheet, Text, ScrollView} from 'react-native';
+import {CodeBlueBot} from 'ChatbotSDK';
+
+type Props = {};
+export default class App extends Component<Props> {
+    constructor() {
+        super();
+        this.state = {
+            log: '\n'
+        }
+
+        CodeBlueBot.initialize("username", "password");
+
+        CodeBlueBot.connect((error, loginStatus) => {
+            if (loginStatus.success) {
+                CodeBlueBot.activate(
+                    //onConnect
+                    (error, text) => {
+                        this.log("Connected")
+                    },
+                    //onDisconnect
+                    (error, text) => {
+                        //disconnected
+                    },
+                    //onError
+                    (error, text) => {
+                        //error
+                    },
+                    //onResult
+                    (error, interactionJson) => {
+                        var interaction = JSON.parse(interactionJson);
+                        if (interaction.action != null) {
+                            for (var action of interaction.action) {
+                                this.log(action.command);
+                                if (action.arguments_kv != null) {
+                                    for (const [k, v] of Object.entries(action.arguments_kv)) {
+                                        this.log('  ' + k + ': ' + v);
+                                    }
+                                }
+                                this.log('');
+                            }
+                        }
+                    });
+            } else {
+                console.log(loginStatus.error)
+            }
+        });
+    }
+
+    log(text) {
+        this.setState({
+            log: this.state.log + text + '\n'
+        });
+    }
+
+    render() {
+        return (
+            <ScrollView
+                style={styles.container}
+                ref={ref => this.scrollView = ref}
+                onContentSizeChange={(contentWidth, contentHeight)=>{
+                    this.scrollView.scrollToEnd({animated: true});
+                }}>
+                <Text style={styles.instructions}>{this.state.log}</Text>
+            </ScrollView>
+        );
+    }
+}
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: '#F5FCFF',
+    },
+    instructions: {
+        textAlign: 'left',
+        color: '#333333',
+        marginBottom: 5,
+    },
+});
 ```
 
 CodeBlueBot is a transcription virtual assistant that listens for phrases typical during a Code Blue event then triggers a function with event details.
 
 Example utterances that will trigger events
 
-| Utterance | Event | 
+| Example Phrase | Event | 
 --------- | ------- 
 Defibrillator set to 300 joules | icrDefibrillatorSet(power=300, unit_power=joules)
 1 milligram of epinephrin delivered | icrMedicationDelivered(dose=1, unit_dose=milligram, medication=epinephrine)
@@ -585,6 +698,8 @@ onDisconnect | Function | Execute on deactivation complete
 onError | Function | Execute on error
 onResult | Function | Execute on final result and response is ready.  `Interaction` object will contain the result
 
+<aside class="warning">Bots will automatically deactivate after 30 seconds of not hearing speech.  This will trigger an <code>onDisconnect</code> event.</aside>
+
 ### deactivate()
 
 Stop listening and disable microphone
@@ -597,216 +712,14 @@ Manually trigger a new code
 
 Manually end current code
 
----
-# Introduction
-
-3Welcome to the Kittn API! You can use our API to access Kittn API endpoints, which can get information on various cats, kittens, and breeds in our database.
-
-We have language bindings in Shell, Ruby, Python, and JavaScript! You can view code examples in the dark area to the right, and you can switch the programming language of the examples with the tabs in the top right.
-
-This example API documentation page was created with [Slate](https://github.com/lord/slate). Feel free to edit it and use it as a base for your own API's documentation.
-
-# Authentication
-
-> To authorize, use this code:
-
-```swift
-require 'kittn'
-
-api = Kittn::APIClient.authorize!('meowmeowmeow')
-```
-
-```objective_c
-import kittn
-
-api = kittn.authorize('meowmeowmeow')
-```
-
-```javascript
-Bot.initialize("format1", "%%format^demo$");
-```
-
-> Make sure to replace `meowmeowmeow` with your API key.
-
-Kittn uses API keys to allow access to the API. You can register a new Kittn API key at our [developer portal](http://example.com/developers).
-
-Kittn expects for the API key to be included in all API requests to the server in a header that looks like the following:
-
-`Authorization: meowmeowmeow`
-
-<aside class="notice">
-You must replace <code>meowmeowmeow</code> with your personal API key.
-</aside>
-
-# Kittens
-
-## Get All Kittens
-
-```ruby
-require 'kittn'
-
-api = Kittn::APIClient.authorize!('meowmeowmeow')
-api.kittens.get
-```
-
-```python
-import kittn
-
-api = kittn.authorize('meowmeowmeow')
-api.kittens.get()
-```
-
-```shell
-curl "http://example.com/api/kittens"
-  -H "Authorization: meowmeowmeow"
-```
-
-```javascript
-const kittn = require('kittn');
-
-let api = kittn.authorize('meowmeowmeow');
-let kittens = api.kittens.get();
-```
-
-> The above command returns JSON structured like this:
-
-```json
-[
-  {
-    "id": 1,
-    "name": "Fluffums",
-    "breed": "calico",
-    "fluffiness": 6,
-    "cuteness": 7
-  },
-  {
-    "id": 2,
-    "name": "Max",
-    "breed": "unknown",
-    "fluffiness": 5,
-    "cuteness": 10
-  }
-]
-```
-
-This endpoint retrieves all kittens.
-
-### HTTP Request
-
-`GET http://example.com/api/kittens`
-
-### Query Parameters
-
-Parameter | Default | Description
---------- | ------- | -----------
-include_cats | false | If set to true, the result will also include cats.
-available | true | If set to false, the result will include kittens that have already been adopted.
-
-<aside class="success">
-Remember — a happy kitten is an authenticated kitten!
-</aside>
-
-## Get a Specific Kitten
-
-```ruby
-require 'kittn'
-
-api = Kittn::APIClient.authorize!('meowmeowmeow')
-api.kittens.get(2)
-```
-
-```python
-import kittn
-
-api = kittn.authorize('meowmeowmeow')
-api.kittens.get(2)
-```
-
-```shell
-curl "http://example.com/api/kittens/2"
-  -H "Authorization: meowmeowmeow"
-```
-
-```javascript
-const kittn = require('kittn');
-
-let api = kittn.authorize('meowmeowmeow');
-let max = api.kittens.get(2);
-```
-
-> The above command returns JSON structured like this:
-
-```json
-{
-  "id": 2,
-  "name": "Max",
-  "breed": "unknown",
-  "fluffiness": 5,
-  "cuteness": 10
-}
-```
-
-This endpoint retrieves a specific kitten.
-
-<aside class="warning">Inside HTML code blocks like this one, you can't use Markdown, so use <code>&lt;code&gt;</code> blocks to denote code.</aside>
-
-### HTTP Request
-
-`GET http://example.com/kittens/<ID>`
-
-### URL Parameters
-
-Parameter | Description
---------- | -----------
-ID | The ID of the kitten to retrieve
-
-## Delete a Specific Kitten
-
-```ruby
-require 'kittn'
-
-api = Kittn::APIClient.authorize!('meowmeowmeow')
-api.kittens.delete(2)
-```
-
-```python
-import kittn
-
-api = kittn.authorize('meowmeowmeow')
-api.kittens.delete(2)
-```
-
-```shell
-curl "http://example.com/api/kittens/2"
-  -X DELETE
-  -H "Authorization: meowmeowmeow"
-```
-
-```javascript
-const kittn = require('kittn');
-
-let api = kittn.authorize('meowmeowmeow');
-let max = api.kittens.delete(2);
-```
-
-> The above command returns JSON structured like this:
-
-```json
-{
-  "id": 2,
-  "deleted" : ":("
-}
-```
-
-This endpoint deletes a specific kitten.
-
-### HTTP Request
-
-`DELETE http://example.com/kittens/<ID>`
-
-### URL Parameters
-
-Parameter | Description
---------- | -----------
-ID | The ID of the kitten to delete
-
+### Recognized Code Blue Events
+
+| Event | Example Phrase | Extracted Data
+--------- | ------- | ------- 
+icrDefibrillatorSet | Defibrillator set to 300 joules | power=300, unit_power=joules
+icrMedicationDelivered | 1 milligram of epinephrin delivered | dose=1, unit_dose=milligram, medication=epinephrine
+icrShockDelivered | Shock delivered | 
+icrEveryoneClear | We're all clear |
+icrPatientInFibrillation | Still looks like it's ventricular fibrillation | state=true
+icrCompressionsStarted | Back on the chest |
+icrCompressionsStopped | Hold CPR | 
