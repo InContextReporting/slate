@@ -1,5 +1,5 @@
 ---
-title: inContext Reference
+title: inContext.ai Reference
 
 language_tabs: # must be one of https://git.io/vQNgJ
   - swift: Swift
@@ -13,7 +13,11 @@ search: true
 ---
 # Introduction
 
+inContext.ai provides voice based UI augmentation and information retrieval for the healthcare industry.  We work with hospitals, doctors, and healthcare partners to enhance existing user interfaces and workflows to be voice driven and make clinical information accessible at the point of care over mobile devices.  
+
 inContext.ai services are accessed through the concept of "Bots".  Each Bot type is specific to the functionality which it is designed to fullfil.  Each Bot is tailored with a custom language model to best recognize specific speech patterns and emits different events based on its use case.
+
+To get started, all you need to do is integrate our mobile SDK into your existing application, instantiate a Bot, and add some functionality to act on emitted voice events. 
 
 # Setup
 
@@ -433,13 +437,13 @@ class ViewController: UIViewController {
 Not Implemented
 ```
 
-ScribeBot is a transcription virtual assistant that listens for notes then aggregates and extracts data from the notes for later retrieval
+ScribeBot is a transcription virtual assistant that listens for notes then aggregates and extracts data for later retrieval.
 
 An example interaction might look like this:
 
 | | | 
 --------- | ------- 
-Doctor | Room ten patient smith sixty nine year old male
+Doctor | Room ten patient Smith sixty nine year old male
 Doctor | Chest pain, negative EKG
 Doctor | Unable to urinate, awaiting urology consult
 
@@ -656,7 +660,7 @@ const styles = StyleSheet.create({
 });
 ```
 
-CodeBlueBot is a transcription virtual assistant that listens for phrases typical during a Code Blue event then triggers a function with event details.
+CodeBlueBot is a transcription virtual assistant that listens for phrases typical during a Code Blue event then triggers a custom function with event details.
 
 Example utterances that will trigger events
 
