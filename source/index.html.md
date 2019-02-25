@@ -23,11 +23,13 @@ source 'https://github.com/CocoaPods/Specs.git'
 platform :ios, "10.0"
 use_frameworks!
 
-target "ChatbotExample-swift" do
+target "ChatbotExample" do
   pod "ChatbotSDK"
 end
 ```
 Add ChatbotSDK to your podfile, then run pod update.
+
+<aside class="warning">You'll need to add an <code>Privacy - Microphone Usage Description</code> property to your application's Info.plist in order to access the microphone.</aside>
 
 ## Additional Setup for React Native
 
@@ -38,7 +40,9 @@ Add ChatbotSDK to your podfile, then run pod update.
 
 React Native setup requires additional steps to create a native iOS to React bridge.
 
-Copy `RNChatbotSDK.m` and `RNChatbotSDK.swift` into your project. You will be prompted to create a bridging header. Accept and place the additional `#import` statements into the header.
+To install, run `npm install react-native-chatbot-sdk --save` from the React Native project folder.
+
+Copy `RNChatbotSDK.m` and `RNChatbotSDK.swift` from node_modules/react-native-chatbot-sdk/ios into your project. You will be prompted to create a bridging header. Accept and place the additional `#import` statements into the header.
 
 # Initialization
 
@@ -219,7 +223,7 @@ class ViewController: UIViewController {
 ```javascript
 import React, {Component} from 'react';
 import {StyleSheet, Text, ScrollView} from 'react-native';
-import {ChatBot} from 'ChatbotSDK';
+import {ChatBot} from 'react-native-chatbot-sdk';
 
 type Props = {};
 export default class App extends Component<Props> {
@@ -571,7 +575,7 @@ class ViewController: UIViewController {
 ```javascript
 import React, {Component} from 'react';
 import {StyleSheet, Text, ScrollView} from 'react-native';
-import {CodeBlueBot} from 'ChatbotSDK';
+import {CodeBlueBot} from 'react-native-chatbot-sdk';
 
 type Props = {};
 export default class App extends Component<Props> {
