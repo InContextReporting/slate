@@ -212,8 +212,10 @@ class ViewController: UIViewController {
         } onPartialResult:^(NSString * _Nonnull partial) {
             //partial speech recognized
         } onResult:^(Interaction * _Nullable interaction) {
-            self.textView.text = [self.textView.text stringByAppendingString:[NSString stringWithFormat:@"Doctor: %@\n", interaction.display_as]];
-            self.textView.text = [self.textView.text stringByAppendingString:[NSString stringWithFormat:@"Bot: %@\n", interaction.response ?: @""]];
+            self.textView.text = [self.textView.text stringByAppendingString:
+                                  [NSString stringWithFormat:@"Doctor: %@\n", interaction.display_as]];
+            self.textView.text = [self.textView.text stringByAppendingString:
+                                  [NSString stringWithFormat:@"Bot: %@\n", interaction.response ?: @""]];
         }];
     } onConnectError:^(LoginStatus * _Nonnull loginStatus) {
         //connection error
@@ -510,18 +512,23 @@ class ViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-
+        var connectTime: Date?
+        
         let codebluebot = CodeBlueBot(username: "username", password: "password")
         codebluebot.connect(onConnectSuccess: { (loginStatus) in
             codebluebot.activate(onConnect: {
                 //connected and listening
+                connectTime = Date()
             }, onDisconnect: {
                 //disconnected
             }, onError: {
                 //error
             }, onResult: { (interaction) in
                 for action in interaction?.action ?? [] {
-                    self.textView.text.append("\(action.command ?? "Unknown")\n")
+                    let outputFormatter = DateFormatter()
+                    outputFormatter.dateFormat = "HH:mm:ss"
+                    let timestamp = outputFormatter.string(from: connectTime!.addingTimeInterval(Double(action.timestamp)/1000.0))
+                    self.textView.text.append("\(timestamp): \(action.command ?? "Unknown")\n")
                     for (k, v) in action.arguments_kv ?? [:] {
                         self.textView.text.append("  \(k): \(v)\n")
                     }
@@ -548,11 +555,13 @@ class ViewController: UIViewController {
 
 - (void)viewDidLoad {
     [super viewDidLoad];
+    __block NSDate* connectTime;
     
     CodeBlueBot *codebluebot = [[CodeBlueBot alloc] initWithUsername:@"username" password:@"password"];
     [codebluebot connectOnConnectSuccess:^(LoginStatus * _Nonnull loginStatus) {
         [codebluebot activateOnConnect:^{
             //connected and listening
+            connectTime = [NSDate date];
         } onDisconnect:^{
             //disconnected
         } onError:^{
@@ -561,7 +570,10 @@ class ViewController: UIViewController {
             //partial speech recognized
         } onResult:^(Interaction * _Nullable interaction) {
             for (Action* action in interaction.action) {
-                self.textView.text = [self.textView.text stringByAppendingString:[NSString stringWithFormat:@"%@\n", action.command]];
+                NSDateFormatter *outputFormatter = [[NSDateFormatter alloc] init];
+                [outputFormatter setDateFormat:@"HH:mm:ss"];
+                NSString *timestamp = [outputFormatter stringFromDate:[NSDate dateWithTimeInterval:(long)action.timestamp/1000.0 sinceDate:connectTime]];
+                self.textView.text = [self.textView.text stringByAppendingString:[NSString stringWithFormat:@"%@: %@\n", timestamp, action.command]];
                 for (id key in action.arguments_kv) {
                     self.textView.text = [self.textView.text stringByAppendingString:[NSString stringWithFormat:@"  %@: %@\n", key, [action.arguments_kv objectForKey:key]]];
                 }
@@ -593,25 +605,30 @@ export default class App extends Component<Props> {
 
         CodeBlueBot.connect((error, loginStatus) => {
             if (loginStatus.success) {
+                var connectTime = null
                 CodeBlueBot.activate(
                     //onConnect
                     (error, text) => {
                         this.log("Connected")
+                        connectTime = new Date()
                     },
                     //onDisconnect
                     (error, text) => {
-                        //disconnected
+                        this.log("Disconnected")
                     },
                     //onError
                     (error, text) => {
-                        //error
+                        this.log("Error")
                     },
                     //onResult
                     (error, interactionJson) => {
                         var interaction = JSON.parse(interactionJson);
                         if (interaction.action != null) {
                             for (var action of interaction.action) {
-                                this.log(action.command);
+                                var actionTime = new Date(connectTime.getTime())
+                                actionTime.setMilliseconds(actionTime.getMilliseconds() + action.timestamp)
+                                var timestamp = actionTime.getHours() + ':' + actionTime.getMinutes() + ':' + actionTime.getSeconds();
+                                this.log(timestamp + ": " + action.command);
                                 if (action.arguments_kv != null) {
                                     for (const [k, v] of Object.entries(action.arguments_kv)) {
                                         this.log('  ' + k + ': ' + v);
@@ -641,7 +658,7 @@ export default class App extends Component<Props> {
                 onContentSizeChange={(contentWidth, contentHeight)=>{
                     this.scrollView.scrollToEnd({animated: true});
                 }}>
-                <Text style={styles.instructions}>{this.state.log}</Text>
+              <Text style={styles.instructions}>{this.state.log}</Text>
             </ScrollView>
         );
     }
@@ -731,3 +748,15 @@ icrEveryoneClear | We're all clear |
 icrPatientInFibrillation | Still looks like it's ventricular fibrillation | state=true
 icrCompressionsStarted | Back on the chest |
 icrCompressionsStopped | Hold CPR | 
+
+# Example Projects
+
+"Hello world!" example projects are available below.
+
+| |
+--------- |
+[Swift](example/ChatbotExample-swift.zip) | 
+[Objective-c](example/ChatbotExample-objc.zip) |
+[React Native](example/ChatbotExampleReact.zip) |
+
+<aside class="info">You'll need to run <code>pod install</code> before building and launching the app.</aside>
